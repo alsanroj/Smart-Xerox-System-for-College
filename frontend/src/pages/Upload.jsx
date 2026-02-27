@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import API from "../services/api"
 import StudentHistory from "./StudentHistory";
 
 const Upload = () => {
@@ -50,8 +50,8 @@ const Upload = () => {
       const data = new FormData();
       data.append("file", file);
 
-      const res = await axios.post(
-        "http://localhost:5000/api/orders/detect-pages",
+      const res = await API.post(
+        "/orders/detect-pages",
         data,
       );
 
@@ -133,7 +133,7 @@ const Upload = () => {
       data.append("file", file);
       Object.keys(formData).forEach((key) => data.append(key, formData[key]));
 
-      await axios.post("http://localhost:5000/api/orders/upload", data);
+      await API.post("/orders/upload", data);
 
       // save student email for history
       localStorage.setItem("studentEmail", formData.email);

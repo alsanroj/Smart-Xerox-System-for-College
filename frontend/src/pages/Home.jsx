@@ -21,7 +21,7 @@ const Home = () => {
           </button>
 
           <button
-            onClick={() => navigate("/history")}
+            onClick={() => navigate("/student-history")}
             className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
           >
             📜 View My Orders

@@ -1,71 +1,121 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-import History from "./History";
+import API from "../services/api";
+import { useNavigate } from "react-router-dom";
 
 const Admin = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // 🔄 Fetch all orders
+  const navigate = useNavigate();
+  const token = localStorage.getItem("adminToken");
+
+  /* =========================
+     🔐 Route Guard
+  ========================== */
+  useEffect(() => {
+    if (!token) {
+      navigate("/admin-login");
+    }
+  }, [token, navigate]);
+
+  /* =========================
+     🔄 Fetch Orders
+  ========================== */
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/orders/history");
+
+      const res = await API.get("/orders/history", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
       setOrders(res.data);
     } catch (err) {
       console.error("Failed to fetch orders", err);
+
+      if (err.response?.status === 401) {
+        localStorage.removeItem("adminToken");
+        navigate("/admin-login");
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchOrders();
+    if (token) {
+      fetchOrders();
+      const interval = setInterval(fetchOrders, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [token]);
 
-    // 🔁 Auto refresh every 5 seconds (LIVE ADMIN)
-    const interval = setInterval(fetchOrders, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // 🔁 Update order status
+  /* =========================
+     🔁 Update Status
+  ========================== */
   const updateStatus = async (id, status) => {
     try {
-      await axios.put(`http://localhost:5000/api/orders/status/${id}`, {
-        status,
-      });
+      await API.put(
+        `/orders/status/${id}`,
+        { status },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
       fetchOrders();
     } catch (err) {
       console.error("Status update failed", err);
     }
   };
 
-  // 📄 Download uploaded file
+  /* =========================
+     📄 View & Print
+  ========================== */
   const viewAndPrint = (id) => {
-    const token = localStorage.getItem("adminToken");
-
-    const url = `http://localhost:5000/api/orders/file/${id}?token=${token}`;
-
+    const url = `${import.meta.env.VITE_API_URL}/orders/file/${id}?token=${token}`;
     const printWindow = window.open(url, "_blank");
 
-    // auto print once loaded
-    printWindow.onload = () => {
-      printWindow.focus();
-      printWindow.print();
-    };
+    if (printWindow) {
+      printWindow.onload = () => {
+        printWindow.focus();
+        printWindow.print();
+      };
+    }
   };
 
-
-
-  // 🧾 Download receipt PDF
+  /* =========================
+     🧾 Download Receipt
+  ========================== */
   const downloadReceipt = (id) => {
-    window.open(`http://localhost:5000/api/orders/receipt/${id}`, "_blank");
+    const url = `${import.meta.env.VITE_API_URL}/orders/receipt/${id}`;
+    window.open(url, "_blank");
+  };
+
+  /* =========================
+     🧹 Logout
+  ========================== */
+  const handleLogout = () => {
+    localStorage.removeItem("adminToken");
+    navigate("/admin-login");
   };
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      <h2 className="text-3xl font-bold mb-6 text-center">
-        Admin Panel – Xerox Orders
-      </h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-bold">Admin Panel – Xerox Orders</h2>
+
+        <button
+          onClick={handleLogout}
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+        >
+          Logout
+        </button>
+      </div>
 
       {loading && (
         <p className="text-center text-gray-500 mb-4">Loading orders…</p>
@@ -107,19 +157,18 @@ const Admin = () => {
             <div className="mt-3 absolute right-5 top-10">
               <span
                 className={`inline-block px-3 py-1 rounded-full text-sm font-semibold
-                  ${
-                    order.status === "Pending"
-                      ? "bg-yellow-100 text-yellow-800 border-2 border-yellow-800"
-                      : order.status === "Printing"
-                        ? "bg-blue-100 text-blue-800 border-2 border-blue-800"
-                        : "bg-green-100 text-green-800 border-2 border-green-800"
-                  }`}
+                ${
+                  order.status === "Pending"
+                    ? "bg-yellow-100 text-yellow-800 border-2 border-yellow-800"
+                    : order.status === "Printing"
+                      ? "bg-blue-100 text-blue-800 border-2 border-blue-800"
+                      : "bg-green-100 text-green-800 border-2 border-green-800"
+                }`}
               >
                 {order.status}
               </span>
             </div>
 
-            {/* 🔘 ACTION BUTTONS */}
             <div className="mt-4 flex flex-wrap gap-2">
               <button
                 onClick={() => updateStatus(order._id, "Pending")}
@@ -160,11 +209,6 @@ const Admin = () => {
             </div>
           </div>
         ))}
-      </div>
-      <div>
-        <h2 className="text-2xl font-bold mb-4">Order History</h2>
-
-        <History />
       </div>
     </div>
   );

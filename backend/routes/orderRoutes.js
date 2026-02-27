@@ -108,7 +108,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
 /* ======================
    📜 ORDER HISTORY
 ====================== */
-router.get("/history", async (req, res) => {
+router.get("/history", adminAuth, async (req, res) => {
   try {
     const orders = await Order.find().sort({ createdAt: -1 });
     res.json(orders);
@@ -120,7 +120,7 @@ router.get("/history", async (req, res) => {
 /* ======================
    🔁 UPDATE STATUS (ADMIN)
 ====================== */
-router.put("/status/:id", async (req, res) => {
+router.put("/status/:id", adminAuth, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
 
@@ -144,6 +144,18 @@ router.put("/status/:id", async (req, res) => {
   }
 });
 
+
+router.get("/student-history/:email", async (req, res) => {
+  try {
+    const orders = await Order.find({ email: req.params.email }).sort({
+      createdAt: -1,
+    });
+
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 /* ======================
    🔍 DETECT PAGES ONLY

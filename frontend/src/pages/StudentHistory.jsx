@@ -1,16 +1,22 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import API from "../services/api"
 
 const StudentHistory = () => {
   const [orders, setOrders] = useState([]);
   const studentEmail = localStorage.getItem("studentEmail");
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/orders/history").then((res) => {
-      const myOrders = res.data.filter((order) => order.email === studentEmail);
-      setOrders(myOrders);
-    });
-  }, []);
+    if (!studentEmail) return;
+
+    API
+      .get(`/orders/student-history/${studentEmail}`)
+      .then((res) => {
+        setOrders(res.data);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch student orders", err);
+      });
+  }, [studentEmail]);
   const getStatusColor = (status) => {
     switch (status) {
       case "Pending":
@@ -64,7 +70,7 @@ const StudentHistory = () => {
             </div>
 
             <a
-              href={`http://localhost:5000/api/orders/receipt/${order._id}`}
+              href={`${import.meta.env.VITE_API_URL}/orders/receipt/${order._id}`}
               target="_blank"
               className="text-blue-600 text-sm"
             >
