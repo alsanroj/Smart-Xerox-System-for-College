@@ -110,7 +110,36 @@ router.post("/upload", upload.single("file"), async (req, res) => {
 ====================== */
 router.get("/history", adminAuth, async (req, res) => {
   try {
-    const orders = await Order.find().sort({ createdAt: -1 });
+    const { billNumber, name, email, startDate, endDate } = req.query;
+
+    let filter = {};
+
+    if (billNumber) {
+      filter.billNumber = { $regex: billNumber, $options: "i" };
+    }
+
+    if (name) {
+      filter.$or = [
+        { "name.first": { $regex: name, $options: "i" } },
+        { "name.last": { $regex: name, $options: "i" } },
+      ];
+    }
+
+    if (email) {
+      filter.email = { $regex: email, $options: "i" };
+    }
+
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) filter.createdAt.$gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        filter.createdAt.$lte = end;
+      }
+    }
+
+    const orders = await Order.find(filter).sort({ createdAt: -1 });
     res.json(orders);
   } catch (err) {
     res.status(500).json({ error: err.message });
