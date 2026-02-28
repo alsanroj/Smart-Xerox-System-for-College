@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
 import { useNavigate } from "react-router-dom";
+import { Search } from "lucide-react";
 
 const Admin = () => {
   const [orders, setOrders] = useState([]);
@@ -132,6 +133,13 @@ const Admin = () => {
     navigate("/admin-login");
   };
 
+  const getCopiesColor = (amount) => {
+    if (amount < 10) return "text-black";
+    if (amount <= 50) return "text-green-700";
+    if (amount <= 200) return "text-blue-700";
+    return "text-red-700";
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       {/* Header */}
@@ -139,7 +147,7 @@ const Admin = () => {
         <h2 className="text-3xl font-bold">Admin Panel – Xerox Orders</h2>
         <button
           onClick={handleLogout}
-          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+          className="bg-red-600 text-sm-center border-0 font-bold text-white px-4 py-2 rounded-full hover:bg-white hover:text-red-700 hover:border-2 border-red-700 hover:cursor-pointer transition duration-300 "
         >
           Logout
         </button>
@@ -147,8 +155,9 @@ const Admin = () => {
 
       {/* 🔍 Filter Section */}
       <div className="bg-white rounded-xl shadow p-4 mb-6">
-        <h3 className="text-md font-semibold text-gray-700 mb-3">
-          🔍 Filter Orders
+        <h3 className="flex items-center gap-2 text-md font-semibold text-gray-700 mb-3">
+          <Search className="w-5 h-5" />
+          Filter Orders
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           <input
@@ -193,13 +202,13 @@ const Admin = () => {
         <div className="flex gap-2 mt-3">
           <button
             onClick={handleSearch}
-            className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm hover:bg-blue-700 transition"
+            className="bg-blue-600 text-white font-semibold px-5 py-2 rounded-lg text-sm hover:bg-blue-700 transition"
           >
             Search
           </button>
           <button
             onClick={handleReset}
-            className="bg-gray-200 text-gray-700 px-5 py-2 rounded-lg text-sm hover:bg-gray-300 transition"
+            className="bg-red-600 text-white font-semibold px-5 py-2 rounded-lg text-sm hover:bg-red-700 transition"
           >
             Reset
           </button>
@@ -226,12 +235,12 @@ const Admin = () => {
               <h3 className="font-bold text-lg">
                 {order.name.first} {order.name.last}
               </h3>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-gray-500 font-bold">
                 {new Date(order.createdAt).toLocaleString()}
               </span>
             </div>
 
-            <p className="text-sm text-gray-600">{order.email}</p>
+            <p className="text-sm font-bold text-gray-600">{order.email}</p>
 
             <div className="mt-2 text-sm space-y-1">
               <p>
@@ -242,7 +251,10 @@ const Admin = () => {
                 Type: <b>{order.xeroxType}</b>
               </p>
               <p>
-                Amount: <b>₹{order.amount}</b>
+                Amount:{" "}
+                <b className={`${getCopiesColor(order.amount)} font-bold`}>
+                  ₹{order.amount}
+                </b>
               </p>
               <p>
                 Bill No: <b>{order.billNumber}</b>
@@ -251,7 +263,7 @@ const Admin = () => {
 
             <div className="mt-3 absolute right-5 top-10">
               <span
-                className={`inline-block px-3 py-1 rounded-full text-sm font-semibold
+                className={`inline-block px-3 py-1 cursor-not-allowed rounded-full text-sm font-bold
                 ${
                   order.status === "Pending"
                     ? "bg-yellow-100 text-yellow-800 border-2 border-yellow-800"
@@ -267,25 +279,40 @@ const Admin = () => {
             <div className="mt-4 flex flex-wrap gap-2">
               <button
                 onClick={() => updateStatus(order._id, "Pending")}
-                className="px-3 py-1 rounded bg-yellow-400 text-black text-sm"
+                className="px-3 py-1 rounded bg-yellow-400 
+               hover:bg-yellow-500 hover:scale-105
+               transition duration-200 
+               cursor-pointer font-semibold text-black text-sm"
               >
                 Pending
               </button>
+
               <button
                 onClick={() => updateStatus(order._id, "Printing")}
-                className="px-3 py-1 rounded bg-blue-500 text-white text-sm"
+                className="px-3 py-1 rounded bg-blue-500 
+               hover:bg-blue-600 hover:scale-105
+               transition duration-200 
+               cursor-pointer font-semibold text-white text-sm"
               >
                 Printing
               </button>
+
               <button
                 onClick={() => updateStatus(order._id, "Ready")}
-                className="px-3 py-1 rounded bg-green-600 text-white text-sm"
+                className="px-3 py-1 rounded bg-green-600 
+               hover:bg-green-700 hover:scale-105
+               transition duration-200 
+               cursor-pointer font-semibold text-white text-sm"
               >
                 Ready
               </button>
+
               <button
                 onClick={() => viewAndPrint(order._id)}
-                className="px-3 py-1 rounded bg-gray-900 text-white text-sm"
+                className="px-3 py-1 rounded bg-gray-900 
+               hover:bg-black hover:scale-105
+               transition duration-200 
+               cursor-pointer font-semibold text-white text-sm"
               >
                 View & Print
               </button>
@@ -294,7 +321,7 @@ const Admin = () => {
             <div className="mt-3">
               <button
                 onClick={() => downloadReceipt(order._id)}
-                className="text-blue-600 text-sm"
+                className="text-blue-600 text-sm font-semibold cursor-pointer"
               >
                 Download Receipt
               </button>

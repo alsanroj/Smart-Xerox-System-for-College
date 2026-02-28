@@ -1,6 +1,7 @@
 import { useState } from "react";
 import API from "../services/api"
 import StudentHistory from "./StudentHistory";
+import { FileText} from "lucide-react";
 
 const Upload = () => {
   const [formData, setFormData] = useState({
@@ -233,7 +234,29 @@ const Upload = () => {
                 Amount: ₹ {formData.amount}
               </div>
 
-              <input type="file" onChange={handleFileSelect} />
+              <label
+                className="flex flex-col items-center justify-center 
+                   w-full p-6 border-2 border-dashed 
+                   border-gray-300 rounded-lg 
+                   cursor-pointer hover:border-blue-500 
+                   hover:bg-blue-50 transition"
+              >
+                <FileText className="w-8 h-8 text-blue-600 mb-2" />
+
+                <span className="text-gray-700 font-semibold">
+                  Click to Upload File
+                </span>
+
+                <span className="text-sm text-gray-400 mt-1">
+                  PDF, DOC, JPG allowed
+                </span>
+
+                <input
+                  type="file"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </label>
 
               <button
                 disabled={loading}
