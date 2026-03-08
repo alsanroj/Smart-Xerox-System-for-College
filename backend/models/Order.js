@@ -39,6 +39,11 @@ const orderSchema = new mongoose.Schema(
       unique: true,
     },
 
+    paymentId: {
+      type: String,
+      default: null,
+    },
+
     status: {
       type: String,
       default: "Pending",
