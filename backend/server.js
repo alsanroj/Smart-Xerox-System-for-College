@@ -3,6 +3,7 @@ const connectDB = require("./config/db");
 const orderRoutes = require("./routes/orderRoutes");
 const cors = require("cors");
 require("dotenv").config();
+console.log("RAZORPAY KEY:", process.env.RAZORPAY_KEY_ID); 
 const adminRoutes = require("./routes/adminRoutes");
 
 
