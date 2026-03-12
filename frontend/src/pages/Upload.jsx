@@ -1,7 +1,7 @@
 import { useState } from "react";
-import API from "../services/api"
+import API from "../services/api";
 import StudentHistory from "./StudentHistory";
-import { FileText} from "lucide-react";
+import { FileText } from "lucide-react";
 
 const Upload = () => {
   const [formData, setFormData] = useState({
@@ -40,6 +40,7 @@ const Upload = () => {
         total += 1;
       }
     }
+
     return total;
   };
 
@@ -51,10 +52,7 @@ const Upload = () => {
       const data = new FormData();
       data.append("file", file);
 
-      const res = await API.post(
-        "/orders/detect-pages",
-        data,
-      );
+      const res = await API.post("/orders/detect-pages", data);
 
       return res.data.totalPages;
     } catch {
@@ -117,26 +115,69 @@ const Upload = () => {
   };
 
   /* =========================
-     🚀 Submit Upload
+     💳 Razorpay Payment
   ========================== */
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!file) {
-      alert("Please select a file");
-      return;
-    }
-
+  const startPayment = async () => {
     try {
-      setLoading(true);
+      const { data } = await API.post("/orders/create-payment", {
+        amount: formData.amount,
+      });
 
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY,
+        amount: data.amount,
+        currency: "INR",
+        name: "Smart Xerox System",
+        description: "Xerox Payment",
+        order_id: data.id,
+
+        handler: async function (response) {
+          const verify = await API.post("/orders/verify-payment", {
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+          });
+
+          if (verify.data.success) {
+            await uploadOrder(response.razorpay_payment_id);
+          } else {
+            alert("Payment verification failed");
+          }
+        },
+
+        prefill: {
+          name: formData.first + " " + formData.last,
+          email: formData.email,
+        },
+
+        theme: {
+          color: "#2563eb",
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      alert("Payment failed");
+    }
+  };
+
+  /* =========================
+     📤 Upload After Payment
+  ========================== */
+  const uploadOrder = async (paymentId) => {
+    try {
       const data = new FormData();
+
       data.append("file", file);
-      Object.keys(formData).forEach((key) => data.append(key, formData[key]));
+      data.append("paymentId", paymentId);
+
+      Object.keys(formData).forEach((key) => {
+        data.append(key, formData[key]);
+      });
 
       await API.post("/orders/upload", data);
 
-      // save student email for history
       localStorage.setItem("studentEmail", formData.email);
 
       setShowHistory(true);
@@ -147,21 +188,38 @@ const Upload = () => {
           ?.scrollIntoView({ behavior: "smooth" });
       }, 300);
 
-      alert("Uploaded successfully 🎉");
+      alert("Payment Successful & Order Placed 🎉");
     } catch (err) {
-      alert(err.response?.data?.error || "Upload failed");
-    } finally {
-      setLoading(false);
+      alert("Upload failed");
     }
+  };
+
+  /* =========================
+     🚀 Submit
+  ========================== */
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!file) {
+      alert("Please select a file");
+      return;
+    }
+
+    if (formData.amount <= 0) {
+      alert("Invalid amount");
+      return;
+    }
+
+    startPayment();
   };
 
   /* =========================
      🧾 UI
   ========================== */
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="w-9xl mx-auto space-y-10">
-        {/* UPLOAD FORM */}
         <div className="w-xl mx-auto">
           <div className="bg-white p-8 rounded-xl shadow">
             <h2 className="text-2xl font-bold mb-6 text-center">
@@ -236,20 +294,34 @@ const Upload = () => {
 
               <label
                 className="flex flex-col items-center justify-center 
-                   w-full p-6 border-2 border-dashed 
-                   border-gray-300 rounded-lg 
-                   cursor-pointer hover:border-blue-500 
-                   hover:bg-blue-50 transition"
+  w-full p-6 border-2 border-dashed 
+  border-gray-300 rounded-lg 
+  cursor-pointer hover:border-blue-500 
+  hover:bg-blue-50 transition"
               >
                 <FileText className="w-8 h-8 text-blue-600 mb-2" />
 
-                <span className="text-gray-700 font-semibold">
-                  Click to Upload File
-                </span>
+                {!file ? (
+                  <>
+                    <span className="text-gray-700 font-semibold">
+                      Click to Upload File
+                    </span>
 
-                <span className="text-sm text-gray-400 mt-1">
-                  PDF, DOC, JPG allowed
-                </span>
+                    <span className="text-sm text-gray-400 mt-1">
+                      PDF, DOC, JPG allowed
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-green-600 font-semibold">
+                      File Selected ✅
+                    </span>
+
+                    <span className="text-sm text-gray-700 mt-1">
+                      {file.name}
+                    </span>
+                  </>
+                )}
 
                 <input
                   type="file"
@@ -261,16 +333,15 @@ const Upload = () => {
               <button
                 disabled={loading}
                 className={`w-full py-2 rounded text-white ${
-                  loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+                  loading ? "bg-gray-400" : "bg-green-600 hover:bg-green-700"
                 }`}
               >
-                {loading ? "Detecting pages..." : "Upload"}
+                {loading ? "Processing..." : "Pay & Upload"}
               </button>
             </form>
           </div>
         </div>
 
-        {/* STUDENT HISTORY BELOW FORM */}
         {showHistory && (
           <div id="history-section">
             <h3 className="text-xl font-bold mb-4 text-center">
