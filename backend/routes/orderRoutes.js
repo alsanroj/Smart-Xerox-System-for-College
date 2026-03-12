@@ -249,7 +249,7 @@ router.post("/create-payment", async (req, res) => {
   try {
 
     const razorpay = new Razorpay({
-      // 👈 function inside ku move panninen
+      
       key_id: process.env.RAZORPAY_KEY_ID,
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
